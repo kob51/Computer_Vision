@@ -1,5 +1,5 @@
-# IntroCV
-Intro to Computer Vision (16-720B) homeworks
+# Computer Vision
+CMU Computer Vision (16-720B) homeworks
 
 
 These are my homeworks for CMU's grad level intro Computer Vision course. The problem statements are in the "hw" pdf's, my writeups are in the "kobrien" pdf's, and the .py files are my code.
