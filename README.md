@@ -17,3 +17,6 @@ HW3 - Various Lucas Kanade Implementations for Object Tracking in Images
 
 
 HW4 - 3D Reconstruction using Epipolar Geometry
+
+
+HW5 - Character Recognition using Deep Learning
