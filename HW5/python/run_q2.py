@@ -88,19 +88,29 @@ for itr in range(max_iters):
     total_loss = 0
     avg_acc = 0
     for xb,yb in batches:
-        pass
         # forward
-
+        h1 = forward(xb,params,name='layer1')
+        probs = forward(h1,params,'output',softmax)
+        
         # loss
         # be sure to add loss and accuracy to epoch totals 
-
+        loss, acc = compute_loss_and_acc(yb, probs)
+        total_loss += loss
+        avg_acc += acc
+        
         # backward
-
+        delta1 = probs - yb
+        delta2 = backwards(delta1,params,'output',linear_deriv)
+        backwards(delta2,params,'layer1',sigmoid_deriv)
+        
         # apply gradient
+        params['Wlayer1'] -= learning_rate * params['grad_Wlayer1']
+        params['blayer1'] -= learning_rate * params['grad_blayer1']
+        params['Woutput'] -= learning_rate * params['grad_Woutput']
+        params['boutput'] -= learning_rate * params['grad_boutput']
 
-        ##########################
-        ##### your code here #####
-        ##########################
+    # calculate average accuracy for this epoch
+    avg_acc /= batch_num
 
         
     if itr % 100 == 0:
@@ -110,18 +120,27 @@ for itr in range(max_iters):
 # Q 2.5 should be implemented in this file
 # you can do this before or after training the network. 
 
-##########################
-##### your code here #####
-##########################
+
+# do one more forward/backward pass to calculate the gradients for the most
+# recently calculated weights (Above)
+h1 = forward(x, params, 'layer1')
+probs = forward(h1, params, 'output', softmax)
+delta1 = probs - y
+delta2 = backwards(delta1, params, 'output', linear_deriv)
+backwards(delta2, params, 'layer1', sigmoid_deriv)
 
 # save the old params
 import copy
 params_orig = copy.deepcopy(params)
-
 eps = 1e-6
+
+
+# NUMERICAL GRADIENT CHECKER
+#k = key, v = value
 for k,v in params.items():
     if '_' in k: 
         continue
+    
     # we have a real parameter!
     # for each value inside the parameter
     #   add epsilon
@@ -129,10 +148,64 @@ for k,v in params.items():
     #   get the loss
     #   compute derivative with central diffs
     
-    ##########################
-    ##### your code here #####
-    ##########################
-
+    # if we're at a W, v is 2D
+    if 'W' in k:
+        # for each element in v, perform a forward pass, then calculate the central
+        # difference. that central diff then gets put into the corresponding
+        # index of the gradient in the original params
+        for i in range(v.shape[0]):
+            for j in range(v.shape[1]):
+                # deepcopy params and add eps to the current element of v1
+                params1 = copy.deepcopy(params)
+                params1[k][i,j] += eps
+                
+                # perform forward pass and get loss1
+                h1 = forward(x,params1,'layer1')
+                probs = forward(h1,params1,'output',softmax)
+                loss1,acc1 = compute_loss_and_acc(y,probs)
+                
+                # deepcopy params and add eps to the current element of v2
+                params2 = copy.deepcopy(params)
+                params2[k][i,j] -= eps
+                
+                # perform forward pass and get loss2
+#                h1 = forward(xb,params2,'layer1')
+                h1 = forward(x,params2,'layer1')
+                probs = forward(h1,params2,'output',softmax)
+                loss2,acc2 = compute_loss_and_acc(y,probs)
+                
+                # compute derivative using central differences, and insert that
+                # value into our original params
+                params['grad_' + k][i,j] = (loss1-loss2) / (2*eps)
+                
+    # if we're at a b, v is 1D            
+    if 'b' in k:
+        # for each element in v, perform a forward pass, then calculate the central
+        # difference. that central diff then gets put into the corresponding
+        # index of the gradient in the original params
+        for i in range(v.shape[0]):
+            # deepcopy params and add eps to the current element of v1
+            params1 = copy.deepcopy(params)
+            params1[k][i] += eps
+            
+            # perform forward pass and get loss1
+            h1 = forward(x,params1,'layer1')
+            probs = forward(h1,params1,'output',softmax)
+            loss1,acc1 = compute_loss_and_acc(y,probs)
+            
+            # deepcopy params and add eps to the current element of v2
+            params2 = copy.deepcopy(params)
+            params2[k][i] -= eps
+            
+            # perform forward pass and get loss2
+            h1 = forward(x,params2,'layer1')
+            probs = forward(h1,params2,'output',softmax)
+            loss2,acc2 = compute_loss_and_acc(y,probs)
+            
+            # compute derivative using central differences, and insert that
+            # value into our original params
+            params['grad_' + k][i] = (loss1-loss2) / (2*eps)
+          
 total_error = 0
 for k in params.keys():
     if 'grad_' in k:
